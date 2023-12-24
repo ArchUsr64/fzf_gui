@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.76"
 env_logger = "0.10.1"
+resize = "0.8.3"
 smithay-client-toolkit = "0.18.0"
 wayland-client = "0.31.1"

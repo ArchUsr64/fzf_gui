@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Error, Result};
+use resize::{px::Gray, Pixel::Gray8, Type::Triangle};
 
 pub struct Font {
 	pub width: usize,
@@ -10,7 +11,7 @@ impl Font {
 	/// Parses a pbm image file as the font atlas.
 	/// The atlas should be `32` glyphs wide and `3` glyphs tall, starting at
 	/// Space (' ') in standard ASCII ordering
-	pub fn from_pbm(bytes: &[u8]) -> Result<Self> {
+	pub fn from_pbm(bytes: &[u8], font_size: usize) -> Result<Self> {
 		let (image_width, image_height, pixel_data) = Self::parse_pbm(bytes)?;
 		if image_width % 32 != 0 {
 			return Err(anyhow!("Font atlas width is invalid: {}", image_width));
@@ -18,23 +19,41 @@ impl Font {
 		if image_height % 3 != 0 {
 			return Err(anyhow!("Font atlas height is invalid: {}", image_height));
 		}
-		let (glyph_width, glyph_height) = (image_width / 32, image_height / 3);
-		println!("{glyph_width}, {glyph_height}, {image_width}, {image_height}");
+		let glyph_original_size = (image_width / 32, image_height / 3);
 		// TODO: Pre allocate glyph bitmaps here
-		let mut glyphs: [[Vec<u8>; 32]; 3] = Default::default();
-		for (j, row) in glyphs.iter_mut().enumerate() {
-			for (i, cell) in row.iter_mut().enumerate() {
-				let top_left = i as usize * glyph_width + j as usize * glyph_height * image_width;
-				for j in 0..glyph_height {
-					for i in 0..glyph_width {
-						cell.push(pixel_data[top_left + i + j * image_width]);
+		let mut glyphs_original: [[Vec<Gray<u8>>; 32]; 3] = Default::default();
+		for (j, row) in glyphs_original.iter_mut().enumerate() {
+			for (i, glyph) in row.iter_mut().enumerate() {
+				let top_left = i as usize * glyph_original_size.0
+					+ j as usize * glyph_original_size.1 * image_width;
+				for j in 0..glyph_original_size.1 {
+					for i in 0..glyph_original_size.0 {
+						glyph.push(Gray::new(pixel_data[top_left + i + j * image_width]));
 					}
 				}
 			}
 		}
+		let mut glyphs_resized: [[Vec<Gray<u8>>; 32]; 3] = Default::default();
+		let glyph_new_size = (font_size / 2, font_size);
+		let mut resizer = resize::new(
+			glyph_original_size.0,
+			glyph_original_size.1,
+			glyph_new_size.0,
+			glyph_new_size.1,
+			Gray8,
+			Triangle,
+		)?;
+		let mut glyphs: [[Vec<u8>; 32]; 3] = Default::default();
+		for (j, row) in glyphs_original.iter().enumerate() {
+			for (i, glyph) in row.iter().enumerate() {
+				glyphs_resized[j][i] = vec![Gray::new(0); glyph_new_size.0 * glyph_new_size.1];
+				resizer.resize(glyph, &mut glyphs_resized[j][i])?;
+				glyphs[j][i] = glyphs_resized[j][i].iter().map(|i| i.0).collect();
+			}
+		}
 		Ok(Self {
-			width: glyph_width,
-			height: glyph_height,
+			width: glyph_new_size.0,
+			height: glyph_new_size.1,
 			glyphs,
 		})
 	}
