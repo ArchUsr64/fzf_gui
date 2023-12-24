@@ -1,12 +1,30 @@
-//! This example is horrible. Please make a better one soon.
 mod app;
 mod events;
+mod fonts;
 mod window;
 use app::App;
+use fonts::Font;
 use window::Window;
 
 fn main() {
 	env_logger::init();
+
+	let font = Font::from_pbm(include_bytes!("res/font_atlas.pbm")).unwrap();
+
+	for i in ' '..='~' {
+		let i = i as usize;
+		let g = &font.glyphs[(i >> 5) - 1][i & 0x1f];
+		for j in 0..font.height {
+			for i in 0..font.width {
+				if g[i + j * font.width] == 255 {
+					print!("@@");
+				} else {
+					print!("  ");
+				}
+			}
+			println!();
+		}
+	}
 
 	// We don't draw immediately, the configure will notify us when to first draw.
 	let (mut window, mut event_queue) = Window::new(320, 240, App::new());
