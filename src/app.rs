@@ -3,6 +3,8 @@ use crate::events::{Event, Keycode};
 /// Responsible for event handling and drawing to screen
 pub struct App {
 	// Some internal state
+	query: String,
+	cursor: usize,
 	running: bool,
 	tick: u32,
 }
@@ -10,26 +12,50 @@ pub struct App {
 impl App {
 	pub fn new() -> Self {
 		App {
+			query: "".to_string(),
+			cursor: 0,
 			running: true,
 			tick: 0,
 		}
 	}
 	pub fn handle_events(&mut self, event: Event) {
-		println!("{event:?}");
-		if let Event::Keyboard {
-			keycode: Keycode::Escape,
-			..
-		} = event
-		{
-			self.running = false
+		println!("{:?}", event);
+		match event {
+			Event::Focused(false)
+			| Event::Keyboard {
+				keycode: Keycode::Escape,
+				..
+			} => self.close(),
+			Event::Keyboard {
+				modifiers,
+				keycode,
+				utf8,
+			} => {
+				let special_modifiers = modifiers.ctrl | modifiers.alt | modifiers.logo;
+				if let Some(text) = utf8 {
+					if !special_modifiers && !text.is_empty() {
+						let (left, right) = self.query.split_at(self.cursor);
+						let mut new_query = String::from(left);
+						new_query.push_str(&text);
+						new_query.push_str(right);
+						self.query = new_query;
+						self.cursor += 1;
+					}
+				}
+				match keycode {
+					Keycode::Left => self.cursor = self.cursor.saturating_sub(1),
+					Keycode::Right => {
+						self.cursor += 1;
+						if self.cursor > self.query.len() {
+							self.cursor = self.query.len();
+						}
+					}
+					_ => (),
+				}
+			}
+			_ => (),
 		}
-		if let Event::Keyboard {
-			keycode: Keycode::space,
-			..
-		} = event
-		{
-			self.tick = 0
-		}
+		println!("{}, {}", self.query, self.cursor);
 	}
 	pub fn draw(&mut self, canvas: &mut [u8], width: u32, height: u32) {
 		canvas

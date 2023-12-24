@@ -6,6 +6,11 @@ use app::App;
 use fonts::Font;
 use window::Window;
 
+/// The height of the glyphs in pixels
+const FONT_SIZE: usize = 20;
+/// Size of the window in number of glyphs
+const WINDOW_SIZE: (usize, usize) = (80, 20);
+
 fn main() {
 	env_logger::init();
 
@@ -27,7 +32,11 @@ fn main() {
 	}
 
 	// We don't draw immediately, the configure will notify us when to first draw.
-	let (mut window, mut event_queue) = Window::new(320, 240, App::new());
+	let (mut window, mut event_queue) = Window::new(
+		(WINDOW_SIZE.0 * FONT_SIZE) as u32,
+		(WINDOW_SIZE.1 * FONT_SIZE) as u32,
+		App::new(),
+	);
 
 	loop {
 		event_queue.blocking_dispatch(&mut window).unwrap();
