@@ -1,4 +1,4 @@
-use crate::events::{Event, Keycode};
+use crate::events::{Event, Keycode, Modifiers};
 
 /// Responsible for event handling and drawing to screen
 pub struct App {
@@ -25,6 +25,11 @@ impl App {
 			| Event::Keyboard {
 				keycode: Keycode::Escape,
 				..
+			}
+			| Event::Keyboard {
+				keycode: Keycode::c,
+				modifiers: Modifiers { ctrl: true, .. },
+				..
 			} => self.close(),
 			Event::Keyboard {
 				modifiers,
@@ -40,6 +45,37 @@ impl App {
 						new_query.push_str(right);
 						self.query = new_query;
 						self.cursor += 1;
+					}
+				}
+				// Ctrl + <T> keycodes
+				if modifiers.ctrl {
+					match keycode {
+						Keycode::a => self.cursor = 0,
+						Keycode::e => self.cursor = self.query.len(),
+						Keycode::w => loop {
+							if self.cursor == 0 {
+								break;
+							}
+							if let Some(' ') = self.query.pop() {
+								self.cursor -= 1;
+								break;
+							}
+							self.cursor -= 1;
+						},
+						Keycode::u => {
+							let (_, right) = self.query.split_at(self.cursor);
+							self.query = right.to_string();
+							self.cursor = 0;
+						}
+						Keycode::k => {
+							let (left, _) = self.query.split_at(self.cursor);
+							self.query = left.to_string();
+						}
+						Keycode::l => {
+							self.query.clear();
+							self.cursor = 0;
+						}
+						_ => (),
 					}
 				}
 				match keycode {
