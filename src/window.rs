@@ -1,3 +1,4 @@
+use crate::{app::App, events::Event};
 use smithay_client_toolkit::{
 	compositor::{CompositorHandler, CompositorState},
 	delegate_compositor, delegate_keyboard, delegate_layer, delegate_output, delegate_pointer,
@@ -7,7 +8,7 @@ use smithay_client_toolkit::{
 	registry_handlers,
 	seat::{
 		keyboard::{KeyEvent, KeyboardHandler, Keysym, Modifiers},
-		pointer::{PointerEvent, PointerEventKind, PointerHandler},
+		pointer::{PointerEvent, PointerHandler},
 		Capability, SeatHandler, SeatState,
 	},
 	shell::{
@@ -25,26 +26,27 @@ use wayland_client::{
 	Connection, EventQueue, QueueHandle,
 };
 
+/// Manages interfacing with Wayland
 pub struct Window {
 	registry_state: RegistryState,
 	seat_state: SeatState,
 	output_state: OutputState,
 	shm: Shm,
-
-	pub exit: bool,
 	first_configure: bool,
 	pool: SlotPool,
 	width: u32,
 	height: u32,
-	shift: Option<u32>,
 	layer: LayerSurface,
 	keyboard: Option<wl_keyboard::WlKeyboard>,
+	modifiers: Modifiers,
 	keyboard_focus: bool,
 	pointer: Option<wl_pointer::WlPointer>,
+	// Can't be a generic since delegate_* macros require 'static lifetime
+	pub app: App,
 }
 
 impl Window {
-	pub fn new(width: u32, height: u32) -> (Self, EventQueue<Self>) {
+	pub fn new(width: u32, height: u32, app: App) -> (Self, EventQueue<Self>) {
 		let conn = Connection::connect_to_env().unwrap();
 		let (globals, event_queue) = registry_queue_init(&conn).unwrap();
 		let qh: QueueHandle<Self> = event_queue.handle();
@@ -73,16 +75,17 @@ impl Window {
 				seat_state: SeatState::new(&globals, &qh),
 				output_state: OutputState::new(&globals, &qh),
 				shm,
-				exit: false,
 				first_configure: true,
 				pool,
 				width,
 				height,
-				shift: None,
 				layer,
 				keyboard: None,
 				keyboard_focus: false,
+				// TODO: Handle the case when modifiers are already activated
+				modifiers: Modifiers::default(),
 				pointer: None,
+				app,
 			},
 			event_queue,
 		)
@@ -152,7 +155,7 @@ impl OutputHandler for Window {
 
 impl LayerShellHandler for Window {
 	fn closed(&mut self, _conn: &Connection, _qh: &QueueHandle<Self>, _layer: &LayerSurface) {
-		self.exit = true;
+		self.app.close();
 	}
 
 	fn configure(
@@ -194,7 +197,6 @@ impl SeatHandler for Window {
 		capability: Capability,
 	) {
 		if capability == Capability::Keyboard && self.keyboard.is_none() {
-			println!("Set keyboard capability");
 			let keyboard = self
 				.seat_state
 				.get_keyboard(qh, &seat, None)
@@ -203,7 +205,6 @@ impl SeatHandler for Window {
 		}
 
 		if capability == Capability::Pointer && self.pointer.is_none() {
-			println!("Set pointer capability");
 			let pointer = self
 				.seat_state
 				.get_pointer(qh, &seat)
@@ -220,12 +221,10 @@ impl SeatHandler for Window {
 		capability: Capability,
 	) {
 		if capability == Capability::Keyboard && self.keyboard.is_some() {
-			println!("Unset keyboard capability");
 			self.keyboard.take().unwrap().release();
 		}
 
 		if capability == Capability::Pointer && self.pointer.is_some() {
-			println!("Unset pointer capability");
 			self.pointer.take().unwrap().release();
 		}
 	}
@@ -242,11 +241,11 @@ impl KeyboardHandler for Window {
 		surface: &wl_surface::WlSurface,
 		_: u32,
 		_: &[u32],
-		keysyms: &[Keysym],
+		_: &[Keysym],
 	) {
 		if self.layer.wl_surface() == surface {
-			println!("Keyboard focus on window with pressed syms: {keysyms:?}");
 			self.keyboard_focus = true;
+			self.app.handle_events(Event::Focused(true));
 		}
 	}
 
@@ -259,8 +258,8 @@ impl KeyboardHandler for Window {
 		_: u32,
 	) {
 		if self.layer.wl_surface() == surface {
-			println!("Release keyboard focus on window");
 			self.keyboard_focus = false;
+			self.app.handle_events(Event::Focused(false));
 		}
 	}
 
@@ -272,11 +271,11 @@ impl KeyboardHandler for Window {
 		_: u32,
 		event: KeyEvent,
 	) {
-		println!("Key press: {event:?}");
-		// press 'esc' to exit
-		if event.keysym == Keysym::Escape {
-			self.exit = true;
-		}
+		self.app.handle_events(Event::Keyboard {
+			modifiers: self.modifiers,
+			keycode: event.keysym,
+			utf8: event.utf8,
+		});
 	}
 
 	fn release_key(
@@ -285,9 +284,8 @@ impl KeyboardHandler for Window {
 		_: &QueueHandle<Self>,
 		_: &wl_keyboard::WlKeyboard,
 		_: u32,
-		event: KeyEvent,
+		_: KeyEvent,
 	) {
-		println!("Key release: {event:?}");
 	}
 
 	fn update_modifiers(
@@ -298,7 +296,7 @@ impl KeyboardHandler for Window {
 		_serial: u32,
 		modifiers: Modifiers,
 	) {
-		println!("Update modifiers: {modifiers:?}");
+		self.modifiers = modifiers;
 	}
 }
 
@@ -310,35 +308,12 @@ impl PointerHandler for Window {
 		_pointer: &wl_pointer::WlPointer,
 		events: &[PointerEvent],
 	) {
-		use PointerEventKind::*;
 		for event in events {
 			// Ignore events for other surfaces
 			if &event.surface != self.layer.wl_surface() {
 				continue;
 			}
-			match event.kind {
-				Enter { .. } => {
-					println!("Pointer entered @{:?}", event.position);
-				}
-				Leave { .. } => {
-					println!("Pointer left");
-				}
-				Motion { .. } => {}
-				Press { button, .. } => {
-					println!("Press {:x} @ {:?}", button, event.position);
-					self.shift = self.shift.xor(Some(0));
-				}
-				Release { button, .. } => {
-					println!("Release {:x} @ {:?}", button, event.position);
-				}
-				Axis {
-					horizontal,
-					vertical,
-					..
-				} => {
-					println!("Scroll H:{horizontal:?}, V:{vertical:?}");
-				}
-			}
+			self.app.handle_events(Event::Mouse(event.kind.clone()));
 		}
 	}
 }
@@ -365,30 +340,7 @@ impl Window {
 			)
 			.expect("create buffer");
 
-		// Draw to the window:
-		{
-			let shift = self.shift.unwrap_or(0);
-			canvas
-				.chunks_exact_mut(4)
-				.enumerate()
-				.for_each(|(index, chunk)| {
-					let x = ((index + shift as usize) % width as usize) as u32;
-					let y = (index / width as usize) as u32;
-
-					let a = 0xFF;
-					let r = u32::min(((width - x) * 0xFF) / width, ((height - y) * 0xFF) / height);
-					let g = u32::min((x * 0xFF) / width, ((height - y) * 0xFF) / height);
-					let b = u32::min(((width - x) * 0xFF) / width, (y * 0xFF) / height);
-					let color = (a << 24) + (r << 16) + (g << 8) + b;
-
-					let array: &mut [u8; 4] = chunk.try_into().unwrap();
-					*array = color.to_le_bytes();
-				});
-
-			if let Some(shift) = &mut self.shift {
-				*shift = (*shift + 1) % width;
-			}
-		}
+		self.app.draw(canvas, width, height);
 
 		// Damage the entire window
 		self.layer
