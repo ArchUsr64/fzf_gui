@@ -84,7 +84,8 @@ impl App {
 					Keycode::BackSpace => {
 						if self.cursor > 0 {
 							self.cursor -= 1;
-							self.query.pop().unwrap();
+							let (left, right) = self.query.split_at(self.cursor);
+							self.query = format!("{left}{}", &right[1..]);
 						}
 					}
 					Keycode::Left => self.cursor = self.cursor.saturating_sub(1),
