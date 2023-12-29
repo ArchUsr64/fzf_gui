@@ -1,4 +1,5 @@
 use crate::{app::App, events::Event};
+use log::{log_enabled, Level};
 use smithay_client_toolkit::{
 	compositor::{CompositorHandler, CompositorState},
 	delegate_compositor, delegate_keyboard, delegate_layer, delegate_output, delegate_pointer,
@@ -60,8 +61,17 @@ impl Window {
 
 		let surface = compositor.create_surface(&qh);
 
-		let layer =
-			layer_shell.create_layer_surface(&qh, surface, Layer::Overlay, Some("fzf"), None);
+		let layer = layer_shell.create_layer_surface(
+			&qh,
+			surface,
+			if log_enabled!(Level::Debug) {
+				Layer::Top
+			} else {
+				Layer::Overlay
+			},
+			Some("fzf"),
+			None,
+		);
 		layer.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
 		layer.set_size(width, height);
 		layer.commit();

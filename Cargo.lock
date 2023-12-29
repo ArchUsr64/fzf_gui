@@ -214,6 +214,7 @@ dependencies = [
  "atty",
  "env_logger",
  "fuzzy-matcher",
+ "log",
  "resize",
  "smithay-client-toolkit",
  "wayland-client",

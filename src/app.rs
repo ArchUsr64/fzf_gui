@@ -1,6 +1,7 @@
 use crate::events::{Event, Keycode, Modifiers};
 use crate::fonts::Font;
 use crate::picker::Picker;
+use log::{debug, log_enabled, Level};
 
 /// Responsible for event handling and drawing to screen
 pub struct App {
@@ -19,10 +20,14 @@ impl App {
 		}
 	}
 	pub fn handle_events(&mut self, event: Event) {
-		println!("{:?}", event);
+		debug!("{:?}", event);
 		match event {
-			Event::Focused(false)
-			| Event::Keyboard {
+			Event::Focused(false) => {
+				if !log_enabled!(Level::Debug) {
+					self.close();
+				}
+			}
+			Event::Keyboard {
 				keycode: Keycode::Escape,
 				..
 			}
