@@ -41,30 +41,34 @@ impl App {
 				keycode,
 				utf8,
 			} => {
-				let search = &mut self.picker.search;
+				let picker = &mut self.picker;
 				let special_modifiers = modifiers.ctrl | modifiers.alt | modifiers.logo;
 				if let Some(Some(ch)) = utf8.map(|i| i.chars().last()) {
 					if !special_modifiers && (' '..='~').contains(&ch) {
-						search.insert(ch);
+						picker.search.insert(ch);
 					}
 				}
 				// Ctrl + <T> keycodes
 				if modifiers.ctrl {
 					match keycode {
-						Keycode::a => search.cursor_to_start(),
-						Keycode::e => search.cursor_to_end(),
-						Keycode::w => search.delete_word(),
-						Keycode::u => search.delete_till_start(),
-						Keycode::k => search.delete_till_end(),
-						Keycode::b => search.cursor_left(),
-						Keycode::f => search.cursor_right(),
+						Keycode::n => picker.next(),
+						Keycode::p => picker.prev(),
+						Keycode::a => picker.search.cursor_to_start(),
+						Keycode::e => picker.search.cursor_to_end(),
+						Keycode::w => picker.search.delete_word(),
+						Keycode::u => picker.search.delete_till_start(),
+						Keycode::k => picker.search.delete_till_end(),
+						Keycode::b => picker.search.cursor_left(),
+						Keycode::f => picker.search.cursor_right(),
 						_ => (),
 					}
 				}
 				match keycode {
-					Keycode::BackSpace => search.delete(),
-					Keycode::Left => search.cursor_left(),
-					Keycode::Right => search.cursor_right(),
+					Keycode::BackSpace => picker.search.delete(),
+					Keycode::Up => picker.prev(),
+					Keycode::Down => picker.next(),
+					Keycode::Left => picker.search.cursor_left(),
+					Keycode::Right => picker.search.cursor_right(),
 					_ => (),
 				}
 			}
@@ -102,7 +106,20 @@ impl App {
 		self.picker
 			.get_matches(line_count - 1)
 			.enumerate()
-			.for_each(|(i, r#match)| draw_line(i + 1, r#match));
+			.for_each(|(i, mtch)| {
+				draw_line(
+					i + 1,
+					format!(
+						"{} {mtch}",
+						if i == self.picker.selection_index() {
+							'>'
+						} else {
+							' '
+						}
+					)
+					.as_str(),
+				)
+			});
 		// Render the cursor
 		for i in 0..self.font.height {
 			let index = 4 * (self.picker.cursor() * self.font.width + i * width as usize);

@@ -73,6 +73,7 @@ impl Search {
 pub struct Picker {
 	pub search: Search,
 	matches: Vec<(i64, usize)>,
+	selection_index: usize,
 	options: Vec<String>,
 }
 
@@ -81,11 +82,20 @@ impl Picker {
 		Self {
 			search: Search::new(),
 			matches: Vec::new(),
+			selection_index: 0,
 			options,
 		}
 	}
 	pub fn query(&self) -> &str {
 		&self.search.query
+	}
+	pub fn selection_index(&self) -> usize {
+		self.selection_index
+	}
+	pub fn selection(&self) -> Option<&str> {
+		self.matches
+			.get(self.selection_index)
+			.map(|(_, i)| self.options[*i].as_str())
 	}
 	pub fn cursor(&self) -> usize {
 		self.search.cursor
@@ -99,10 +109,22 @@ impl Picker {
 			};
 		}
 		self.matches.sort_by(|a, b| b.0.cmp(&a.0));
+		self.selection_index = self
+			.selection_index
+			.min(self.matches.len().saturating_sub(1));
 	}
 	pub fn get_matches(&self, count: usize) -> impl Iterator<Item = &str> {
 		self.matches[..count.min(self.matches.len())]
 			.iter()
 			.map(|(_, i)| self.options[*i].as_str())
+	}
+	pub fn next(&mut self) {
+		self.selection_index += 1;
+		self.selection_index = self
+			.selection_index
+			.min(self.matches.len().saturating_sub(1));
+	}
+	pub fn prev(&mut self) {
+		self.selection_index = self.selection_index.saturating_sub(1);
 	}
 }
