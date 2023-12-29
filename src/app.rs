@@ -64,6 +64,10 @@ impl App {
 					}
 				}
 				match keycode {
+					Keycode::Return => {
+						println!("{}", self.picker.selection().unwrap_or(self.picker.query()));
+						self.close();
+					}
 					Keycode::BackSpace => picker.search.delete(),
 					Keycode::Up => picker.prev(),
 					Keycode::Down => picker.next(),
