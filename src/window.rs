@@ -340,7 +340,24 @@ impl Window {
 			)
 			.expect("create buffer");
 
-		self.app.draw(canvas, width, height);
+		(0..self.width).for_each(|i| {
+			let index = 4 * i as usize;
+			canvas[index] = 0xff;
+			canvas[index + 1] = 0x00;
+			canvas[index + 2] = 0xff;
+			canvas[index + 3] = 0xff;
+		});
+
+		self.app
+			.draw(&mut canvas[4 * self.width as usize..], width, height);
+
+		(0..self.width).for_each(|i| {
+			let index = canvas.len() - 4 * i as usize - 1;
+			canvas[index - 3] = 0xff;
+			canvas[index - 2] = 0x00;
+			canvas[index - 1] = 0x00;
+			canvas[index] = 0xff;
+		});
 
 		// Damage the entire window
 		self.layer
