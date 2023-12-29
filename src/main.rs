@@ -14,7 +14,7 @@ const WINDOW_SIZE: (usize, usize) = (80, 20);
 fn main() {
 	env_logger::init();
 
-	let font = Font::from_pbm(include_bytes!("res/font_atlas.pbm"), 20).unwrap();
+	let font = Font::from_pbm(include_bytes!("res/font_atlas.pbm"), FONT_SIZE).unwrap();
 
 	for i in ' '..='~' {
 		let i = i as usize;
@@ -35,7 +35,7 @@ fn main() {
 	let (mut window, mut event_queue) = Window::new(
 		(WINDOW_SIZE.0 * FONT_SIZE) as u32,
 		(WINDOW_SIZE.1 * FONT_SIZE) as u32,
-		App::new(),
+		App::new(font),
 	);
 
 	loop {

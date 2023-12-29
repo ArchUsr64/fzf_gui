@@ -28,7 +28,9 @@ impl Font {
 					+ j as usize * glyph_original_size.1 * image_width;
 				for j in 0..glyph_original_size.1 {
 					for i in 0..glyph_original_size.0 {
-						glyph.push(Gray::new(pixel_data[top_left + i + j * image_width]));
+						// Subtract with 0xff to invert the colors
+						let pixel_value = 0xff - pixel_data[top_left + i + j * image_width];
+						glyph.push(Gray::new(pixel_value));
 					}
 				}
 			}
@@ -56,6 +58,14 @@ impl Font {
 			height: glyph_new_size.1,
 			glyphs,
 		})
+	}
+
+	pub fn get_glyph(&self, symbol: char) -> Option<&[u8]> {
+		if !(' '..='~').contains(&symbol) {
+			return None;
+		}
+		let symbol_ascii = symbol as usize;
+		Some(&self.glyphs[(symbol_ascii >> 5) - 1][symbol_ascii & 0x1f])
 	}
 
 	fn parse_pbm(bytes: &[u8]) -> Result<(usize, usize, Vec<u8>)> {
