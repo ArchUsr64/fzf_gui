@@ -1,6 +1,7 @@
 mod app;
 mod events;
 mod fonts;
+mod picker;
 mod window;
 use app::App;
 use fonts::Font;
