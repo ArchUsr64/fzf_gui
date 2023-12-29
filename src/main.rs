@@ -4,6 +4,7 @@ mod fonts;
 mod picker;
 mod window;
 use app::App;
+use atty::Stream;
 use fonts::Font;
 use window::Window;
 
@@ -14,6 +15,25 @@ const WINDOW_SIZE: (usize, usize) = (80, 20);
 
 fn main() {
 	env_logger::init();
+
+	let mut buf = Vec::new();
+
+	if atty::is(Stream::Stdin) {
+		let dir_reader = std::fs::read_dir(".").unwrap();
+		for i in dir_reader {
+			if let Ok(Ok(dir)) = i.map(|dir| dir.file_name().into_string()) {
+				buf.push(dir);
+			}
+		}
+	} else {
+		let stdin = std::io::stdin();
+		for line in stdin.lines() {
+			if let Ok(line) = line {
+				buf.push(line);
+			}
+		}
+	}
+	println!("Buff: {buf:?}");
 
 	let font = Font::from_pbm(include_bytes!("res/font_atlas.pbm"), FONT_SIZE).unwrap();
 
