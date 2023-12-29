@@ -11,10 +11,10 @@ pub struct App {
 }
 
 impl App {
-	pub fn new(font: Font) -> Self {
+	pub fn new(font: Font, options: Vec<String>) -> Self {
 		App {
 			font,
-			picker: Picker::new(),
+			picker: Picker::new(options),
 			running: true,
 		}
 	}
@@ -94,6 +94,7 @@ impl App {
 			canvas[index + 1] = 0x00;
 			canvas[index + 2] = 0x00;
 		}
+		self.picker.draw();
 	}
 	pub fn running(&self) -> bool {
 		self.running

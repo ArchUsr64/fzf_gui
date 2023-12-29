@@ -16,24 +16,23 @@ const WINDOW_SIZE: (usize, usize) = (80, 20);
 fn main() {
 	env_logger::init();
 
-	let mut buf = Vec::new();
+	let mut options = Vec::new();
 
 	if atty::is(Stream::Stdin) {
 		let dir_reader = std::fs::read_dir(".").unwrap();
 		for i in dir_reader {
 			if let Ok(Ok(dir)) = i.map(|dir| dir.file_name().into_string()) {
-				buf.push(dir);
+				options.push(dir);
 			}
 		}
 	} else {
 		let stdin = std::io::stdin();
 		for line in stdin.lines() {
 			if let Ok(line) = line {
-				buf.push(line);
+				options.push(line);
 			}
 		}
 	}
-	println!("Buff: {buf:?}");
 
 	let font = Font::from_pbm(include_bytes!("res/font_atlas.pbm"), FONT_SIZE).unwrap();
 
@@ -56,7 +55,7 @@ fn main() {
 	let (mut window, mut event_queue) = Window::new(
 		(WINDOW_SIZE.0 * FONT_SIZE) as u32,
 		(WINDOW_SIZE.1 * FONT_SIZE) as u32 + 2,
-		App::new(font),
+		App::new(font, options),
 	);
 
 	loop {

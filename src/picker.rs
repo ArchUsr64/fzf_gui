@@ -1,3 +1,6 @@
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
+
 pub struct Search {
 	query: String,
 	cursor: usize,
@@ -69,12 +72,16 @@ impl Search {
 
 pub struct Picker {
 	pub search: Search,
+	matches: Vec<(i64, usize)>,
+	options: Vec<String>,
 }
 
 impl Picker {
-	pub fn new() -> Self {
+	pub fn new(options: Vec<String>) -> Self {
 		Self {
 			search: Search::new(),
+			matches: Vec::new(),
+			options,
 		}
 	}
 	pub fn query(&self) -> &str {
@@ -82,5 +89,19 @@ impl Picker {
 	}
 	pub fn cursor(&self) -> usize {
 		self.search.cursor
+	}
+	pub fn draw(&mut self) {
+		self.matches.clear();
+		let fuzzy_matcher = SkimMatcherV2::default();
+		for (i, choice) in self.options.iter().enumerate() {
+			if let Some(score) = fuzzy_matcher.fuzzy_match(choice, self.query()) {
+				self.matches.push((score, i));
+			};
+		}
+		self.matches.sort_by_key(|i| i.0);
+		self.matches.iter().for_each(|(_, match_index)| {
+			println!("{}", self.options[*match_index]);
+		});
+		println!();
 	}
 }
