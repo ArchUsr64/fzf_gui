@@ -108,6 +108,7 @@ impl App {
 			let array: &mut [u8; 4] = chunk.try_into().unwrap();
 			*array = BACKGROUND.to_le_bytes();
 		});
+		// TODO: Handle text and cursor rendering when the text width is greater than canvas width
 		for (i, symbol) in self.query.char_indices() {
 			let glyph = self.font.get_glyph(symbol).expect("Symbol is not ASCII");
 			let top_left = i * self.font.width * 4;
@@ -120,6 +121,13 @@ impl App {
 					canvas[index + 2] = pixel_value;
 				}
 			}
+		}
+		// Render the cursor
+		for i in 0..self.font.height {
+			let index = 4 * (self.cursor * self.font.width + i * width as usize);
+			canvas[index] = 0x00;
+			canvas[index + 1] = 0x00;
+			canvas[index + 2] = 0x00;
 		}
 	}
 	pub fn running(&self) -> bool {
