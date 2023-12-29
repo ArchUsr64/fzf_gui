@@ -87,7 +87,7 @@ impl App {
 			let array: &mut [u8; 4] = chunk.try_into().unwrap();
 			*array = BACKGROUND.to_le_bytes();
 		});
-		let mut draw_line = |index, text: &str| {
+		let mut draw_line = |index, text: &str, selection: bool| {
 			let top_line = index * width as usize * self.font.height * 4;
 			for (i, symbol) in text.char_indices() {
 				let glyph = self.font.get_glyph(symbol).expect("Symbol is not ASCII");
@@ -95,7 +95,10 @@ impl App {
 				for j in 0..self.font.height {
 					for i in 0..self.font.width {
 						let index = top_left + 4 * (i + j * width as usize);
-						let pixel_value = glyph[i + j * self.font.width];
+						let mut pixel_value = glyph[i + j * self.font.width];
+						if selection {
+							pixel_value = 0xff - pixel_value;
+						}
 						canvas[index] = pixel_value;
 						canvas[index + 1] = pixel_value;
 						canvas[index + 2] = pixel_value;
@@ -103,7 +106,7 @@ impl App {
 				}
 			}
 		};
-		draw_line(0, self.picker.query());
+		draw_line(0, self.picker.query(), false);
 		// TODO: Handle text and cursor rendering when the text width is greater than canvas width
 		self.picker.update();
 		// -1 since one line is taken by search
@@ -111,17 +114,11 @@ impl App {
 			.get_matches(line_count - 1)
 			.enumerate()
 			.for_each(|(i, mtch)| {
+				let selection = i == self.picker.selection_index();
 				draw_line(
 					i + 1,
-					format!(
-						"{} {mtch}",
-						if i == self.picker.selection_index() {
-							'>'
-						} else {
-							' '
-						}
-					)
-					.as_str(),
+					format!("{} {mtch}", if selection { '>' } else { ' ' }).as_str(),
+					selection,
 				)
 			});
 		// Render the cursor
