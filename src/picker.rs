@@ -90,7 +90,7 @@ impl Picker {
 	pub fn cursor(&self) -> usize {
 		self.search.cursor
 	}
-	pub fn draw(&mut self) {
+	pub fn update(&mut self) {
 		self.matches.clear();
 		let fuzzy_matcher = SkimMatcherV2::default();
 		for (i, choice) in self.options.iter().enumerate() {
@@ -98,10 +98,11 @@ impl Picker {
 				self.matches.push((score, i));
 			};
 		}
-		self.matches.sort_by_key(|i| i.0);
-		self.matches.iter().for_each(|(_, match_index)| {
-			println!("{}", self.options[*match_index]);
-		});
-		println!();
+		self.matches.sort_by(|a, b| b.0.cmp(&a.0));
+	}
+	pub fn get_matches(&self, count: usize) -> impl Iterator<Item = &str> {
+		self.matches[..count.min(self.matches.len())]
+			.iter()
+			.map(|(_, i)| self.options[*i].as_str())
 	}
 }
