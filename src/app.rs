@@ -90,7 +90,10 @@ impl App {
 		let mut draw_line = |index, text: &str, selection: bool| {
 			let top_line = index * width as usize * self.font.height * 4;
 			for (i, symbol) in text.char_indices() {
-				let glyph = self.font.get_glyph(symbol).expect("Symbol is not ASCII");
+				let glyph = match self.font.get_glyph(symbol) {
+					Some(x) => x,
+					None => continue,
+				};
 				let top_left = top_line + i * self.font.width * 4;
 				for j in 0..self.font.height {
 					for i in 0..self.font.width {
