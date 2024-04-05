@@ -72,7 +72,11 @@ impl Window {
 			Some("fzf"),
 			None,
 		);
-		layer.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
+		layer.set_keyboard_interactivity(if log_enabled!(Level::Debug) {
+			KeyboardInteractivity::OnDemand
+		} else {
+			KeyboardInteractivity::Exclusive
+		});
 		layer.set_size(width, height);
 		layer.commit();
 
