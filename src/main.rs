@@ -11,9 +11,9 @@ use window::Window;
 use log::{debug, log_enabled, Level};
 
 /// The height of the glyphs in pixels
-const FONT_SIZE: usize = 20;
+const FONT_SIZE: usize = 30;
 /// Size of the window in number of glyphs
-const WINDOW_SIZE: (usize, usize) = (80, 20);
+const WINDOW_SIZE: (usize, usize) = (40, 20);
 
 fn main() {
 	env_logger::init();
