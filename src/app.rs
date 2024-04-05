@@ -8,6 +8,7 @@ pub struct App {
 	// Some internal state
 	picker: Picker,
 	font: Font,
+	exit_code: i32,
 	running: bool,
 }
 
@@ -16,6 +17,7 @@ impl App {
 		App {
 			font,
 			picker: Picker::new(options),
+			exit_code: 0,
 			running: true,
 		}
 	}
@@ -24,7 +26,7 @@ impl App {
 		match event {
 			Event::Focused(false) => {
 				if !log_enabled!(Level::Debug) {
-					self.close();
+					self.close(1);
 				}
 			}
 			Event::Keyboard {
@@ -35,7 +37,7 @@ impl App {
 				keycode: Keycode::c,
 				modifiers: Modifiers { ctrl: true, .. },
 				..
-			} => self.close(),
+			} => self.close(1),
 			Event::Keyboard {
 				modifiers,
 				keycode,
@@ -66,7 +68,7 @@ impl App {
 				match keycode {
 					Keycode::Return => {
 						println!("{}", self.picker.selection().unwrap_or(self.picker.query()));
-						self.close();
+						self.close(0);
 					}
 					Keycode::BackSpace => picker.search.delete(),
 					Keycode::Up => picker.prev(),
@@ -135,7 +137,11 @@ impl App {
 	pub fn running(&self) -> bool {
 		self.running
 	}
-	pub fn close(&mut self) {
+	pub fn close(&mut self, exit_code: i32) {
 		self.running = false;
+		self.exit_code = exit_code;
+	}
+	pub fn exit(&self) {
+		std::process::exit(self.exit_code);
 	}
 }

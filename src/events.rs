@@ -1,7 +1,6 @@
 pub use smithay_client_toolkit::seat::{
-	keyboard::{KeyEvent, KeyboardHandler, Keysym, Modifiers},
-	pointer::{PointerEvent, PointerEventKind, PointerHandler},
-	Capability, SeatHandler, SeatState,
+	keyboard::{Keysym, Modifiers},
+	pointer::PointerEventKind,
 };
 
 pub use Keysym as Keycode;

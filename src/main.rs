@@ -72,4 +72,6 @@ fn main() {
 			break;
 		}
 	}
+
+	window.app.exit();
 }
