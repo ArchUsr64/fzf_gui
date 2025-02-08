@@ -1,4 +1,4 @@
-use crate::{app::App, events::Event};
+use crate::{app::App, events::Event, Mode, THEME};
 use log::{log_enabled, Level};
 use smithay_client_toolkit::{
 	compositor::{CompositorHandler, CompositorState},
@@ -343,6 +343,10 @@ impl Window {
 		let width = self.width;
 		let height = self.height;
 		let stride = self.width as i32 * 4;
+		let border_color = match THEME {
+			Mode::Dark => 0xff,
+			Mode::Light => 0x00,
+		};
 
 		let (buffer, canvas) = self
 			.pool
@@ -356,9 +360,9 @@ impl Window {
 
 		(0..self.width).for_each(|i| {
 			let index = 4 * i as usize;
-			canvas[index] = 0xff;
-			canvas[index + 1] = 0x00;
-			canvas[index + 2] = 0xff;
+			canvas[index] = border_color;
+			canvas[index + 1] = border_color;
+			canvas[index + 2] = border_color;
 			canvas[index + 3] = 0xff;
 		});
 
@@ -367,9 +371,9 @@ impl Window {
 
 		(0..self.width).for_each(|i| {
 			let index = canvas.len() - 4 * i as usize - 1;
-			canvas[index - 3] = 0xff;
-			canvas[index - 2] = 0x00;
-			canvas[index - 1] = 0x00;
+			canvas[index - 3] = border_color;
+			canvas[index - 2] = border_color;
+			canvas[index - 1] = border_color;
 			canvas[index] = 0xff;
 		});
 

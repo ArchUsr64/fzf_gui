@@ -1,3 +1,4 @@
+use crate::{Mode, THEME};
 use anyhow::{anyhow, Error, Result};
 use resize::{px::Gray, Pixel::Gray8, Type::Triangle};
 
@@ -28,8 +29,10 @@ impl Font {
 					+ j as usize * glyph_original_size.1 * image_width;
 				for j in 0..glyph_original_size.1 {
 					for i in 0..glyph_original_size.0 {
-						// Subtract with 0xff to invert the colors
-						let pixel_value = 0xff - pixel_data[top_left + i + j * image_width];
+						let pixel_value = match THEME {
+							Mode::Dark => pixel_data[top_left + i + j * image_width],
+							Mode::Light => 0xff - pixel_data[top_left + i + j * image_width],
+						};
 						glyph.push(Gray::new(pixel_value));
 					}
 				}

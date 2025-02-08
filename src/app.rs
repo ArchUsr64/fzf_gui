@@ -1,6 +1,7 @@
 use crate::events::{Event, Keycode, Modifiers};
 use crate::fonts::Font;
 use crate::picker::Picker;
+use crate::{Mode, THEME};
 use log::{debug, log_enabled, Level};
 
 /// Responsible for event handling and drawing to screen
@@ -84,7 +85,10 @@ impl App {
 	pub fn draw(&mut self, canvas: &mut [u8], width: u32, height: u32) {
 		let line_count = height as usize / self.font.height;
 		// 24-bit colors in ARGB format
-		const BACKGROUND: u32 = 0xffffffff;
+		const BACKGROUND: u32 = match THEME {
+			Mode::Dark => 0xff000000,
+			Mode::Light => 0xffffffff,
+		};
 		canvas.chunks_exact_mut(4).for_each(|chunk| {
 			let array: &mut [u8; 4] = chunk.try_into().unwrap();
 			*array = BACKGROUND.to_le_bytes();
@@ -129,9 +133,13 @@ impl App {
 		// Render the cursor
 		for i in 0..self.font.height {
 			let index = 4 * (self.picker.cursor() * self.font.width + i * width as usize);
-			canvas[index] = 0x00;
-			canvas[index + 1] = 0x00;
-			canvas[index + 2] = 0x00;
+			let cursor_color = match THEME {
+				Mode::Dark => 0xff,
+				Mode::Light => 0x00,
+			};
+			canvas[index] = cursor_color;
+			canvas[index + 1] = cursor_color;
+			canvas[index + 2] = cursor_color;
 		}
 	}
 	pub fn running(&self) -> bool {
