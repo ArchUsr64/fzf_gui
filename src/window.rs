@@ -320,15 +320,9 @@ impl PointerHandler for Window {
 		_conn: &Connection,
 		_qh: &QueueHandle<Self>,
 		_pointer: &wl_pointer::WlPointer,
-		events: &[PointerEvent],
+		_events: &[PointerEvent],
 	) {
-		for event in events {
-			// Ignore events for other surfaces
-			if &event.surface != self.layer.wl_surface() {
-				continue;
-			}
-			self.app.handle_events(Event::Mouse(event.kind.clone()));
-		}
+		// Do nothing with mouse events
 	}
 }
 

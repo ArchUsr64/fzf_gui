@@ -1,10 +1,6 @@
-pub use smithay_client_toolkit::seat::{
-	keyboard::{Keysym, Modifiers},
-	pointer::PointerEventKind,
-};
+pub use smithay_client_toolkit::seat::keyboard::{Keysym, Modifiers};
 
 pub use Keysym as Keycode;
-pub use PointerEventKind as MouseEvent;
 
 #[derive(Debug)]
 pub enum Event {
@@ -14,5 +10,4 @@ pub enum Event {
 		keycode: Keycode,
 		utf8: Option<String>,
 	},
-	Mouse(MouseEvent),
 }
