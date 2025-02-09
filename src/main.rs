@@ -13,7 +13,7 @@ use log::{debug, log_enabled, Level};
 /// The height of the glyphs in pixels
 const FONT_SIZE: usize = 30;
 /// Size of the window in number of glyphs
-const WINDOW_SIZE: (usize, usize) = (40, 20);
+const WINDOW_SIZE: (usize, usize) = (80, 20);
 
 pub enum Mode {
 	Dark,
@@ -65,7 +65,7 @@ fn main() {
 		}
 	} // We don't draw immediately, the configure will notify us when to first draw.
 	let (mut window, mut event_queue) = Window::new(
-		(WINDOW_SIZE.0 * FONT_SIZE) as u32,
+		(WINDOW_SIZE.0 * FONT_SIZE / 2) as u32,
 		// +2 for rendering the top and bottom borders (1px each)
 		(WINDOW_SIZE.1 * FONT_SIZE) as u32 + 2,
 		App::new(font, options),
